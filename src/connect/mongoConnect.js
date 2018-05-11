@@ -7,13 +7,21 @@ let url = 'false';
 if (process.env.MODE === 'docker') {
   // initialize container connection parameters
   let container = 'cosmosdb';
-  const child = spawn("powershell.exe", [`docker inspect --format '{{.NetworkSettings.Networks.nat.IPAddress}}' ${container}`]);
-  child.stdout.on("data", data => {
-    const containerIP = data.toString().split(/\n/g)[0];
-    url = `mongodb://localhost:C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==@${containerIP}:10255/admin?ssl=true`;
+  // first, make sure the container is started
+  const launch = spawn('powershell.exe', [`docker start ${container}`]);
+  launch.stdout.on('data', data => {
+    console.log(`${data} started`);
+    // now get the IP address
+    const child = spawn('powershell.exe', [`docker inspect --format '{{.NetworkSettings.Networks.nat.IPAddress}}' ${container}`]);
+    child.stdout.on('data', data => {
+      const containerIP = data.toString().split(/\n/g)[0];
+      url = `mongodb://localhost:C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==@${containerIP}:10255/streaming?ssl=true`;
+    });
+    child.stderr.on('data', error => { throw (error) });
+    child.stdin.end(); //end input
   });
-  child.stderr.on("data", error => { throw (error) });
-  child.stdin.end(); //end input
+  launch.stderr.on('data', error => { throw (error) });
+  launch.stdin.end();
 } else {
   url = require('../../config/config.json').database.mongoUrl;
 }
