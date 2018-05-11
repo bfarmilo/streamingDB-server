@@ -6,20 +6,29 @@ const config = require('../config/config.json');
 
 const { connect } = require('./connect/mongoConnect');
 
-let db, collection;
+let db;
+let collection;
+
+const collectionList = [
+  'categories',
+  'offerings',
+  'services',
+  'verticals'
+]
 
 router.use(bodyParser.text());
 
 // gets a list of fields for querying, ** cache disabled **
 router.get('/test', async (req, res, next) => {
   try {
-    db = await connect();
-    collection = db.collection('categories');
+    if (!db) {
+      db = await connect();
+    }
+    collection = db.collection(collectionList.includes(req.query.collection) ? req.query.collection : 'categories');
     const sample = await collection.findOne();
-    console.log(sample);
     res.json(Object.keys(sample));
     //setCache(req.query.user, 'fields', result);
-    console.info('/test response OK');
+    console.info(`/test to ${collectionList.includes(req.query.collection) ? req.query.collection : 'categories'} collection response OK`);
   } catch (err) {
     console.error(err)
   }
